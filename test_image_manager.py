@@ -27,12 +27,15 @@ def test_dir():
     return test_dir
 
 
-# TODO
-def test_convert_jpg_to_png():
-    pass
+def test_convert_jpg_to_png(test_dir):
+    # Convert all JPEG images to PNG
+    image_manager.convert_jpgs_to_pngs(test_dir)
+
+    # Confirm no JPEGs remain
+    for file in (item for item in test_dir.iterdir() if item.is_file()):
+        assert not image_manager.is_jpg(file)
 
 
-# TODO
 def copy_test_directory(source_dir: pathlib.Path, target_dir: pathlib.Path):
     """Copy contents of source directory into target directory."""
 
