@@ -1,2 +1,3 @@
-# jpg-to-png-converter
-Recursively convert all JPG files to PNGs in a given directory (including its sub-directories).
+# image-manager
+- Covert JPGs to PNGs
+- Round corners of images
