@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-import image_manager
+import src.image_manager.image_manager as image_manager
 
 TEST_ROOT_DIR = pathlib.Path(".test_root")
 TEST_SAMPLE_DIR = pathlib.Path(f"{TEST_ROOT_DIR}/.test_sample")
@@ -27,6 +27,9 @@ def test_dir():
     return test_dir
 
 
+# BEGIN TESTS
+
+
 def test_convert_jpg_to_png(test_dir):
     # Convert all JPEG images to PNG
     image_manager.convert_jpgs_to_pngs(test_dir)
@@ -34,6 +37,28 @@ def test_convert_jpg_to_png(test_dir):
     # Confirm no JPEGs remain
     for file in (item for item in test_dir.iterdir() if item.is_file()):
         assert not image_manager.is_jpg(file)
+
+
+@pytest.mark.skip
+def test_convert_jpg_to_png_keep_originals(test_dir):
+    # TODO
+    pass
+
+
+@pytest.mark.skip
+def test_resize_images(test_dir):
+    # TODO
+    pass
+
+
+@pytest.mark.skip
+def test_resize_images_keep_originals(test_dir):
+    # TODO
+    # 
+    pass
+
+
+# END TESTS
 
 
 def copy_test_directory(source_dir: pathlib.Path, target_dir: pathlib.Path):
