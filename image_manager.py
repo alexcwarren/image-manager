@@ -1,11 +1,49 @@
 import argparse
 import math
 import pathlib
+import sys
 
-import PIL
+from PIL import Image as PillowImage
 
 
-def convert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> None:
+def convert_jpgs_to_pngs(path: pathlib.Path) -> None:
+    """Convert all JPEG images to PNG contained in given directory path."""
+
+    # Confirm path is a valid directory or file
+    if not (path.is_file() or path.is_dir()):
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"path provided is not a file: '{path.absolute()}'"
+            )
+        if not path.is_dir():
+            raise NotADirectoryError(
+                f"path provided is not a directory: '{path.absolute()}'"
+            )
+    
+    # Recursively iterate through contents of directory
+    for path_item in path.iterdir():
+        if path_item.is_dir():
+            convert_jpgs_to_pngs(path_item)
+        elif path_item.is_file():
+            convert_jpg_to_png(path_item)
+    
+
+def convert_jpg_to_png(filepath: pathlib.Path) -> None:
+    """Convert given JPEG image to PNG."""
+    if is_jpg(filepath):
+        # Create new filepath with 'png' extension
+        new_filepath = pathlib.Path(f"{filepath.parent}/{filepath.stem}.png")
+
+        # Create new PNG file from JPEG file
+        img = PillowImage.open(filepath, "r", ["JPEG"])
+        img.save(new_filepath, "PNG")
+        img.close()
+
+        # Remove the original JPEF file
+        filepath.unlink()
+
+
+def OLDconvert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> None:
     print(f"{" " * depth}[{directory.name}]")
     depth += 1
     for path_item in directory.iterdir():
@@ -146,8 +184,7 @@ def remove_corners(directory: pathlib.Path, corner_radius: int) -> None:
             round(
                 corner_radius - math.sqrt(corner_radius**2 - (corner_radius - y) ** 2)
             )
-        )
-        + 1
+        ) + 1
         for y in range(1, corner_radius)
     )
 
@@ -188,7 +225,20 @@ def remove_corners(directory: pathlib.Path, corner_radius: int) -> None:
 
 
 if __name__ == "__main__":
-    directory = prompt_directory_path()
+    parser = argparse.ArgumentParser(
+        prog="ImageManager",
+        description="Modify image files in a given directory."
+    )
+    parser.add_argument("path", type=pathlib.Path, help="the path to directory of images to modify")
+    args = parser.parse_args()
+
+    try:
+        convert_jpg_to_png(args.path)
+    except (FileNotFoundError, NotADirectoryError):
+        print(sys.exception())
+    print()
+
+    # directory = prompt_directory_path()
     # convert_to_pngs(directory, prompt_keep_old_files())
     # print()
 
@@ -197,4 +247,4 @@ if __name__ == "__main__":
     #     resize_images(directory, resize)
     #     print(f"Images resized.\n")
 
-    remove_corners(directory, 14)
+    # remove_corners(directory, 14)
