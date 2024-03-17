@@ -96,7 +96,7 @@ def OLDconvert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> Non
     depth += 1
     for path_item in directory.iterdir():
         if path_item.is_dir():
-            convert_jpg_to_png(path_item, do_keep, depth)
+            OLDconvert_jpg_to_png(path_item, do_keep, depth)
         else:
             print(f"{" " * depth}{path_item.name}", end="")
 
@@ -110,7 +110,7 @@ def OLDconvert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> Non
             new_file = pathlib.Path(new_path)
 
             if is_jpg(path_item):
-                img = PIL.Image.open(path_item, "r", ["JPEG"])
+                img = PillowImage.open(path_item, "r", ["JPEG"])
                 img.save(new_path, "PNG")
                 img.close()
                 print(f" (converted)", end="")
@@ -250,7 +250,7 @@ def remove_corners(directory: pathlib.Path, corner_radius: int) -> None:
         if path_item.is_dir():
             remove_corners(path_item)
         else:
-            img = PIL.Image.open(path_item)
+            img = PillowImage.open(path_item)
             w = img.width
             h = img.height
 
