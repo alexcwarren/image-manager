@@ -1,94 +1,19 @@
-import argparse
-import math
+"""Round Corners
+
+This script rounds corners of all images in a given directory to a given corner-radius.
+
+This file can also be imported as a module and contains the following function:
+
+    * round_corners
+"""
+
 import pathlib
-import sys
-
-from PIL import Image as PillowImage
-
-
-def convert_jpgs_to_pngs(path: pathlib.Path, keep_originals: bool = False) -> None:
-    """Convert all JPEG images to PNG contained in given directory path."""
-
-    raise_if_invalid_path(path)
-    
-    # Recursively iterate through contents of directory
-    for path_item in path.iterdir():
-        if path_item.is_dir():
-            convert_jpgs_to_pngs(path_item)
-        elif path_item.is_file() and is_jpg(path_item):
-            # Create new filepath with 'png' extension
-            new_filepath = pathlib.Path(f"{path_item.parent}/{path_item.stem}.png")
-
-            # Create new PNG file from JPEG file
-            img = PillowImage.open(path_item, "r", ["JPEG"])
-            img.save(new_filepath, "PNG")
-            img.close()
-
-            # If keep_originals != True, remove the original JPEF file
-            if not keep_originals:
-                path_item.unlink()
+import check_path
+import math
 
 
-def resize_images(path: pathlib.Path, ratio: float = None, width: int = None, height: int = None, keep_originals: bool = False) -> None:
-    """Resize all images in given directory path.
-
-    If only width or only height are provided, images are resized with same aspect
-    ratio.
-    """
-
-    raise_if_invalid_path(path)
-    
-    # Recursively iterate through contents of directory
-    for path_item in path.iterdir():
-        if path_item.is_dir():
-            convert_jpgs_to_pngs(path_item)
-        elif path_item.is_file():
-            img = PillowImage.open(path_item)
-
-            # # Maintain orientation - TODO - Doesn't work all the time
-            # o_width, o_height = img.size
-            # if o_width > o_height:
-            #     resize = (resize[1], resize[0])
-
-            if ratio:
-                width = int(ratio * img.width)
-                height = int(ratio * img.height)
-            else:
-                # Keep aspect ratio if other dimension not provided
-                if width and not height:
-                    height = img.height * width // img.width
-            
-                if height and not width:
-                    width = img.width * height // img.height
-                
-                if not (width or height):
-                    raise TypeError(f"{resize_images.__name__}() missing 2 argument: 'width' and 'height'")
-
-            resized_img = img.resize((width, height))
-
-            # If keep != True, remove the original file
-            if keep_originals:
-                new_path = pathlib.Path(f"{path_item.parent}/{path_item.stem}_resized{path_item.suffix}")
-                resized_img.save(new_path)
-            else:
-                resized_img.save(path_item)
-            
-            resized_img.close()
-            img.close()
-
-
-def raise_if_invalid_path(path: pathlib.Path) -> None:
-    """Confirm path is a valid directory or file."""
-
-    if not (path.is_file() or path.is_dir()):
-        if not path.is_file():
-            raise FileNotFoundError(
-                f"path provided is not a file: '{path.absolute()}'"
-            )
-        if not path.is_dir():
-            raise NotADirectoryError(
-                f"path provided is not a directory: '{path.absolute()}'"
-            )
+def round_corners():
+    pass
 
 
 def OLDconvert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> None:
@@ -122,12 +47,6 @@ def OLDconvert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> Non
                 path_item.replace(new_file)
                 print(f" (renamed)", end="")
             print()
-
-
-def is_jpg(file: pathlib.Path) -> bool:
-    contents = file.read_bytes().splitlines()
-    first_line = contents[0]
-    return bytes("JFIF", "iso-8859-1") in first_line
 
 
 def sanitize_name(name: str) -> str:
@@ -273,34 +192,5 @@ def remove_corners(directory: pathlib.Path, corner_radius: int) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="ImageManager",
-        description="Modify image files in a given directory."
-    )
-    parser.add_argument("path", type=pathlib.Path, help="the path to directory of images to modify")
-    parser.add_argument("-p", "--png-convert", action="store_true", dest="png")
-    parser.add_argument("-r", "--resize", action="store_true")
-    parser.add_argument("-c", "--corner-round", action="store_true", dest="corner")
-    parser.add_argument("-k", "--keep-originals", action="store_true", dest="keep")
-    args = parser.parse_args()
-
-    # Verify at least one option selected
-    if not (args.png or args.resize or args.corner):
-        print("Please choose at least one of the options:\n  -p -r -c\n")
-        parser.print_help()
-    else:
-        try:
-            # Make keep=args.keep if set or keep=False if args.keep wasn't set
-            keep = args.keep or False
-
-            if args.png:
-                convert_jpgs_to_pngs(args.path, keep_originals=keep)
-            if args.resize:
-                resize_images(args.path, ratio=0.5, keep_originals=keep)
-            if args.corner:
-                pass
-        except (FileNotFoundError, NotADirectoryError, TypeError):
-            print(sys.exception())
-    print()
-
+    pass
     # remove_corners(directory, 14)
