@@ -8,7 +8,7 @@ This file can also be imported as a module and contains the following function:
 """
 
 import pathlib
-import check_path
+from . import check_path
 import math
 
 
@@ -17,13 +17,13 @@ def round_corners():
 
 
 def OLDconvert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> None:
-    print(f"{" " * depth}[{directory.name}]")
+    print(f"{' ' * depth}[{directory.name}]")
     depth += 1
     for path_item in directory.iterdir():
         if path_item.is_dir():
             OLDconvert_jpg_to_png(path_item, do_keep, depth)
         else:
-            print(f"{" " * depth}{path_item.name}", end="")
+            print(f"{' ' * depth}{path_item.name}", end="")
 
             new_filename = f"{sanitize_name(path_item.stem)}.png"
             do_rename = False
