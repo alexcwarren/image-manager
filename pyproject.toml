@@ -1,10 +1,11 @@
 [project]
 name = "image-manager"
 requires-python = ">= 3.8"
-author = {name = "Alex C Warren", email = "alexcwarren.info@gmail.com"}
+authors = [{name = "Alex C Warren", email = "alexcwarren.info@gmail.com"}]
 description = "Modify a batch of given image files."
 readme = "README.md"
 license = {file = "LICENSE"}
+version = "1.0"
 
 [tool.black]
 line-length = 87
