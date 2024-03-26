@@ -8,13 +8,9 @@ This file can also be imported as a module and contains the following functions:
     * is_jpg
 """
 
-import sys
-
-if sys.version_info < (3, 9):
-    sys.exit("ERROR: requires a different Python: '>=3.9'")
-
 import argparse
 import pathlib
+import sys
 
 import check_path
 from PIL import Image as PillowImage
