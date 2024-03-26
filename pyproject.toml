@@ -1,6 +1,6 @@
 [project]
 name = "image-manager"
-requires-python = ">= 3.8"
+requires-python = ">= 3.9"
 authors = [{name = "Alex C Warren", email = "alexcwarren.info@gmail.com"}]
 description = "Modify a batch of given image files."
 readme = "README.md"
