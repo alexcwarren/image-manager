@@ -11,8 +11,8 @@ This file can also be imported as a module and contains the following functions:
 import argparse
 import pathlib
 import sys
-from . import check_path
 
+import check_path
 from PIL import Image as PillowImage
 
 
@@ -48,19 +48,17 @@ def is_jpg(file: pathlib.Path) -> bool:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="ConvertToPNG",
-        description="Convert image files to PNG format in a given directory."
+        description="Convert image files to PNG format in a given directory.",
     )
     parser.add_argument(
-        "path",
-        type=pathlib.Path,
-        help="the path to directory of images to modify"
+        "path", type=pathlib.Path, help="the path to directory of images to modify"
     )
     parser.add_argument(
         "-k",
         "--keep-originals",
         action="store_true",
         dest="keep",
-        help="use if you want to keep original files"
+        help="use if you want to keep original files",
     )
     args = parser.parse_args()
 

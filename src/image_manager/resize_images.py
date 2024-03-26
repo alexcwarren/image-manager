@@ -10,7 +10,7 @@ This file can also be imported as a module and contains the following function:
 import argparse
 import pathlib
 import sys
-from . import check_path
+import check_path
 
 from PIL import Image as PillowImage
 

@@ -1,7 +1,7 @@
 import pytest
 
-# import image_manager.convert_to_png as convert_to_png
-from image_manager import convert_to_png
+import image_manager.convert_to_png as convert_to_png
+# from image_manager import convert_to_png
 
 
 def test_convert_jpg_to_png(test_dir):

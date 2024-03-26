@@ -8,7 +8,7 @@ This file can also be imported as a module and contains the following function:
 """
 
 import pathlib
-from . import check_path
+import check_path
 import math
 
 
