@@ -6,6 +6,10 @@ description = "Modify a batch of given image files."
 readme = "README.md"
 license = {file = "LICENSE"}
 version = "1.0"
+dependencies = [
+    "pillow",
+    "pytest",
+]
 
 [tool.black]
 line-length = 87
