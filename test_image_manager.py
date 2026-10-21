@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from PIL import Image
 
@@ -86,7 +88,9 @@ def test_convert_jpgs_to_pngs_mixed_directory_recursively(tmp_path):
     png = tmp_path / "existing.png"
     with Image.new("RGB", (1, 1), "blue") as image:
         image.save(png, "PNG")
-    originals = {path: path.read_bytes() for path in (text, png)}
+    empty = nested / "empty.jpg"
+    empty.touch()
+    originals = {path: path.read_bytes() for path in (text, png, empty)}
 
     image_manager.convert_jpgs_to_pngs(tmp_path)
 
@@ -98,7 +102,7 @@ def test_convert_jpgs_to_pngs_mixed_directory_recursively(tmp_path):
     for path, original_bytes in originals.items():
         assert path.read_bytes() == original_bytes
     expected_files = {source.with_suffix(".png") for source in sources}
-    expected_files.update([text, png])
+    expected_files.update([text, png, empty])
     assert {path for path in tmp_path.rglob("*") if path.is_file()} == expected_files
 
 
@@ -136,12 +140,78 @@ def test_is_jpg_checks_contents_instead_of_extension(tmp_path):
     assert image_manager.is_jpg(text) is False
 
 
-def test_is_jpg_empty_file_raises_index_error(tmp_path):
-    """Current detection cannot handle an empty file."""
+def test_is_jpg_empty_text_png_and_unidentifiable_data_are_not_jpegs(tmp_path):
     source = tmp_path / "empty.txt"
     source.touch()
-    with pytest.raises(IndexError):
-        image_manager.is_jpg(source)
+    assert image_manager.is_jpg(source) is False
+    assert source.read_bytes() == b""
+
+    text = tmp_path / "notes.jpg"
+    text.write_text("Not an image.")
+    assert image_manager.is_jpg(text) is False
+    assert text.read_bytes() == b"Not an image."
+
+    png = tmp_path / "picture.jpg"
+    with Image.new("RGB", (1, 1), "blue") as image:
+        image.save(png, "PNG")
+    assert image_manager.is_jpg(png) is False
+
+    binary = tmp_path / "random.bin"
+    binary.write_bytes(bytes(range(256)) * 4)
+    assert image_manager.is_jpg(binary) is False
+
+
+def test_is_jpg_finds_exif_jpegs_and_ignores_extensions(tmp_path):
+    """An EXIF JPEG carries no JFIF marker, so the old heuristic missed it."""
+    non_jfif = tmp_path / "non-jfif.txt"
+    with Image.new("RGB", (2, 2), "green") as image:
+        image.save(non_jfif, "JPEG")
+    data = non_jfif.read_bytes()
+    jfif_at = data.index(b"JFIF")
+    # drop the APP0 segment (marker + length + payload) so no JFIF marker remains
+    non_jfif.write_bytes(data[: jfif_at - 4] + data[jfif_at + 14 :])
+    assert b"JFIF" not in non_jfif.read_bytes()
+    assert image_manager.is_jpg(non_jfif) is True
+
+    with Image.new("RGB", (2, 2), "red") as image:
+        image.save(tmp_path / "plain.TXT", "JPEG")
+    assert image_manager.is_jpg(tmp_path / "plain.TXT") is True
+
+
+def test_is_jpg_does_not_take_a_textual_jfif_marker_for_a_jpeg(tmp_path):
+    """Data mentioning JFIF is not a JPEG on that account alone."""
+    source = tmp_path / "about.jpg"
+    source.write_text("The JFIF APP0 marker is described here.")
+    assert image_manager.is_jpg(source) is False
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX file permissions")
+def test_is_jpg_propagates_permission_errors(tmp_path):
+    """A file that cannot be read is an error, not a silent non-JPEG."""
+    locked = tmp_path / "locked.jpg"
+    with Image.new("RGB", (1, 1), "red") as image:
+        image.save(locked, "JPEG")
+    locked.chmod(0o000)
+    try:
+        with pytest.raises(PermissionError):
+            image_manager.is_jpg(locked)
+    finally:
+        locked.chmod(0o644)
+
+
+def test_convert_jpg_to_png_preserves_the_source_when_decoding_fails(tmp_path):
+    """A truncated JPEG keeps its original file and leaves no partial PNG."""
+    source = tmp_path / "truncated.jpg"
+    with Image.new("RGB", (2, 2), "red") as image:
+        image.save(source, "JPEG")
+    original_bytes = source.read_bytes()
+    source.write_bytes(original_bytes[: len(original_bytes) // 2])
+
+    with pytest.raises(OSError):
+        image_manager.convert_jpg_to_png(source)
+
+    assert source.read_bytes() == source.read_bytes()[: len(original_bytes) // 2]
+    assert not source.with_suffix(".png").exists()
 
 
 @pytest.mark.parametrize(

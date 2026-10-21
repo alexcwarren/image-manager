@@ -5,6 +5,7 @@ import math
 import pathlib
 
 from PIL import Image as PillowImage
+from PIL import UnidentifiedImageError
 
 
 def convert_jpgs_to_pngs(path: pathlib.Path) -> None:
@@ -41,9 +42,14 @@ def convert_jpg_to_png(filepath: pathlib.Path) -> None:
         )
 
     # Create new PNG file from JPEG file
-    img = PillowImage.open(filepath, "r", ["JPEG"])
-    img.save(new_filepath, "PNG")
-    img.close()
+    with PillowImage.open(filepath, "r", ["JPEG"]) as img:
+        try:
+            img.save(new_filepath, "PNG")
+        except Exception:
+            # A JPEG that decodes mid-way leaves the source untouched and no
+            # half-written destination behind; the error reaches the caller.
+            new_filepath.unlink(missing_ok=True)
+            raise
 
     # Remove the original JPEF file
     filepath.unlink()
@@ -83,9 +89,19 @@ def OLDconvert_jpg_to_png(directory: pathlib.Path, do_keep=True, depth=0) -> Non
 
 
 def is_jpg(file: pathlib.Path) -> bool:
-    contents = file.read_bytes().splitlines()
-    first_line = contents[0]
-    return bytes("JFIF", "iso-8859-1") in first_line
+    """Whether the file's actual content is a JPEG image, whatever its name says.
+
+    Pillow's format detection reads the image signature, so JFIF and EXIF JPEGs
+    are both recognised, while empty files, text, other image formats and
+    unidentifiable data are simply not JPEGs. Content a signature cannot
+    identify raises UnidentifiedImageError and counts as not a JPEG; anything
+    else (a missing file, a directory, a permission problem) reaches the caller.
+    """
+    try:
+        with PillowImage.open(file, "r") as image:
+            return image.format == "JPEG"
+    except UnidentifiedImageError:
+        return False
 
 
 def sanitize_name(name: str) -> str:
