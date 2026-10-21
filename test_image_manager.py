@@ -206,3 +206,98 @@ def test_replace_special_characters(text, expected):
 def test_name_helpers_reject_empty_names(function):
     with pytest.raises(IndexError):
         function("")
+
+
+# --- CLI contract: exit status and stdout/stderr (issue #7) ------------------
+
+import os
+import subprocess
+import sys
+
+
+def run_cli(*args):
+    """Run image_manager as a subprocess, exactly as a user would."""
+    env = {**os.environ, "PYTHONPATH": os.path.dirname(str(image_manager.__file__))}
+    return subprocess.run(
+        [sys.executable, "-m", "image_manager", *[str(a) for a in args]],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+
+def make_jpg(path, color="red"):
+    with Image.new("RGB", (2, 2), color) as image:
+        image.save(path, "JPEG")
+
+
+def test_cli_success_exits_zero_and_converts(tmp_path):
+    make_jpg(tmp_path / "photo.jpg")
+    result = run_cli(tmp_path)
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert not (tmp_path / "photo.jpg").exists()
+    assert (tmp_path / "photo.png").exists()
+
+
+def test_cli_empty_directory_exits_zero(tmp_path):
+    result = run_cli(tmp_path)
+    assert result.returncode == 0, (result.stdout, result.stderr)
+
+
+def test_cli_missing_path_exits_nonzero_with_stderr(tmp_path):
+    missing = tmp_path / "missing"
+    result = run_cli(missing)
+    assert result.returncode != 0
+    assert result.stdout == ""
+    assert str(missing) in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_cli_regular_file_argument_is_a_distinct_error(tmp_path):
+    source = tmp_path / "photo.jpg"
+    make_jpg(source)
+    original_bytes = source.read_bytes()
+    result = run_cli(source)
+    assert result.returncode != 0
+    assert "not a directory" in result.stderr
+    assert str(source) in result.stderr
+    assert "Traceback" not in result.stderr
+    assert source.read_bytes() == original_bytes
+    assert not source.with_suffix(".png").exists()
+
+
+def test_cli_destination_conflict_preserves_both_files(tmp_path):
+    source = tmp_path / "photo.jpg"
+    output = tmp_path / "photo.png"
+    make_jpg(source)
+    with Image.new("RGB", (2, 2), "blue") as image:
+        image.save(output, "PNG")
+    original_png = output.read_bytes()
+
+    result = run_cli(tmp_path)
+
+    assert result.returncode != 0
+    assert str(output) in result.stderr
+    assert "Traceback" not in result.stderr
+    assert output.read_bytes() == original_png
+    assert source.exists()
+
+
+def test_cli_undecodable_jpeg_exits_nonzero_without_traceback(tmp_path):
+    source = tmp_path / "corrupt.jpg"
+    source.write_bytes(b"\xff\xd8\xff\xe0\x00\x10JFIF\x00" + b"\x00" * 32)
+    result = run_cli(tmp_path)
+    assert result.returncode != 0
+    assert str(source) in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root ignores file permissions")
+def test_cli_unreadable_file_exits_nonzero_without_traceback(tmp_path):
+    source = tmp_path / "photo.jpg"
+    make_jpg(source)
+    source.chmod(0o000)
+    result = run_cli(tmp_path)
+    assert result.returncode != 0
+    assert str(source) in result.stderr
+    assert "Traceback" not in result.stderr

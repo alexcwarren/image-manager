@@ -3,21 +3,20 @@ from __future__ import annotations
 import argparse
 import math
 import pathlib
+import sys
 
 from PIL import Image as PillowImage
+from PIL import UnidentifiedImageError
 
 
 def convert_jpgs_to_pngs(path: pathlib.Path) -> None:
     """Convert all JPEG images to PNG contained in given directory path."""
 
-    # Confirm path is a valid directory or file
-    if not (path.is_file() or path.is_dir()):
-        if not path.is_file():
-            raise FileNotFoundError(f"path provided is not a file: '{path.absolute()}'")
-        if not path.is_dir():
-            raise NotADirectoryError(
-                f"path provided is not a directory: '{path.absolute()}'"
-            )
+    # Confirm the path exists and is a directory, before any conversion starts
+    if not path.exists():
+        raise FileNotFoundError(f"path does not exist: '{path.absolute()}'")
+    if not path.is_dir():
+        raise NotADirectoryError(f"path provided is not a directory: '{path.absolute()}'")
 
     # Recursively iterate through contents of directory
     for path_item in path.iterdir():
@@ -237,6 +236,13 @@ if __name__ == "__main__":
 
     try:
         convert_jpgs_to_pngs(args.path)
-    except (FileNotFoundError, NotADirectoryError) as e:
-        print(e)
+    except (
+        FileNotFoundError,
+        NotADirectoryError,
+        PermissionError,
+        FileExistsError,
+        UnidentifiedImageError,
+    ) as e:
+        print(f"image-manager: error: {e}", file=sys.stderr)
+        sys.exit(1)
     print()

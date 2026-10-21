@@ -37,6 +37,13 @@ The original JPEG is removed after a successful conversion.
 
 If a PNG with the same filename already exists, the conversion will stop rather than overwrite the existing file.
 
+## Exit status
+
+- `0` — the conversion succeeded (an empty directory is a success), or `--help` was used
+- `1` — the run stopped on a user-facing failure: the path is missing or not a directory, a file
+cannot be read or written, a destination PNG already exists, or a JPEG cannot be decoded.
+  The error message naming the affected path is written to stderr; nothing is printed to stdout on failure.
+
 ## Development
 
 Install the development dependencies:
